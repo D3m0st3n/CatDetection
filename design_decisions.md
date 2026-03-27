@@ -237,6 +237,24 @@ A local, Python-only ML pipeline to detect and identify **two cats (Aïoli and M
 **Reason**: `cv2.imread` ignores EXIF orientation metadata, so photos taken in portrait mode on a phone (common for cat photos) would appear rotated in the output. YOLOv8 applies EXIF correction internally during inference, so not applying the same correction to the display image would misalign drawn bounding boxes with the visible subject. Using PIL + `exif_transpose` keeps the display image orientation consistent with what YOLO processed.
 **Exchange summary**: The agent noted the mismatch risk during planning — `draw_predictions` operates on a numpy array the GUI loads separately from the path YOLO uses for inference. The user approved the PIL approach in the plan review. This is the same EXIF handling pattern already used in `src/annotate.py`.
 
+### 36. TUTORIAL.md as a dedicated onboarding document
+**Trigger**: Request to document the project for future users, prioritising markdown files in the root.
+**Decision**: Create `TUTORIAL.md` as a standalone, step-by-step guide covering environment setup, annotation, preprocessing, training, evaluation, the inference app, testing, and common gotchas. Reference it from `AGENTS.md` as the first entry in the Key Documents table and as the top bullet in "Where to Start".
+**Reason**: The existing documentation (`ROADMAP.md`, `DESIGN.md`, `CONTRIBUTING.md`) is structured for agents and active developers — it describes *what* the project is and *how to contribute* rather than *how to get started from zero*. A new human user would struggle to find their bearings across four documents. A single linear tutorial reduces onboarding friction. The VS Code annotation limitation (decision #20) and the PyTorch-before-ultralytics install order (decision #31) are the two most likely pain points for new users — both are prominently surfaced in the tutorial.
+**Exchange summary**: The user asked for a tutorial based on a review of the project's markdown files. The agent read all root-level markdown files, synthesised them into a 12-section tutorial, and updated `AGENTS.md` to reference it.
+
+### 37. Git repository: initial commit scope and .gitignore strategy
+**Trigger**: Request to create a git repo and initialise it with the current project state.
+**Decision**: Track all source code (`src/`, `app/`, `tests/`, `notebooks/`), documentation (all `.md` files), configuration (`pyproject.toml`, `requirements*.txt`, `data/data.yaml`), and tooling (`.gitignore`). Exclude large binary/generated artefacts: `data/raw/`, `data/images/`, `data/labels/` (dataset), `runs/` (training outputs), `*.pt` (model weights), `outputs/` (GUI results), `.ipynb_checkpoints/`. Add `.ipynb_checkpoints/` to `.gitignore` when it was found missing during the initial staging pass.
+**Reason**: The gitignored directories are either large (thousands of images), machine-generated (reproducible by running the pipeline), or private (personal photos). The committed files represent the *pipeline* — everything needed to reproduce the full workflow on a new machine given the raw data. Model weights (`*.pt`) are excluded because they are large binaries that change with every training run and are not part of the source.
+**Exchange summary**: The agent reviewed the pre-existing `.gitignore`, staged all appropriate files, created the initial commit, created the `D3m0st3n/CatDetection` GitHub repo via the browser, configured the remote, and guided the user to run `git push` from their Windows terminal (the sandbox has no outbound internet access for git).
+
+### 38. README.md as a dual-purpose document
+**Trigger**: Request to create a README covering both the ML pipeline project and the experience of using AI agents to accelerate development.
+**Decision**: Structure the README in two distinct sections: (1) the CatDetection project itself — what it does, model performance (with a demo detection image), architecture overview, and quick-start instructions; (2) a meta section on AI-assisted development — the workflow used, what worked well, and lessons learned. Include the demo detection image in the project section to immediately show what the model produces.
+**Reason**: The project has two audiences: someone who wants to run or fork the cat detection pipeline, and someone curious about the AI-agent-driven development methodology. A single README serves both without requiring separate documents. The demo image makes the model's output concrete and visually engaging. The meta section adds genuine educational value that distinguishes this project from a standard ML repo.
+**Exchange summary**: The user requested both a README and updated design decisions at the same time. The agent read `design_decisions.md` and viewed the demo detection output image, then created the dual-section README and committed all changes together.
+
 ---
 
 ## The Planning Process We Used
