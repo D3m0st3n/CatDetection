@@ -16,7 +16,7 @@ Upload a photo and the model draws a bounding box around each cat it finds, labe
 
 ![Both Aïoli and Mayo detected on their wall shelf](assets/demo_detection.jpg)
 
-*Aïoli (orange box, left) and Mayo (teal box, right) detected on their wall shelf. Confidence scores are shown on the box labels.*
+*Aïoli (blue box, right) and Mayo (yellow box, left) detected on their wall shelf. Confidence scores are shown on the box labels.*
 
 ### Model performance
 
