@@ -112,3 +112,99 @@ Applies consistently across the annotation notebook, training results notebook, 
 - Label font: white text on coloured background, same font size as image resolution allows.
 - These colours are defined as constants in `src/utils.py` (`AIOLI_COLOR`, `MAYO_COLOR`, `CLASS_COLORS`, `BOX_THICKNESS`) and used everywhere — never hardcoded inline.
 - In the annotation notebook, saved boxes use dashed outlines (alpha 0.5) and pending boxes use solid outlines (alpha 1.0) to visually distinguish them.
+
+---
+
+## Technical Specifications
+
+An exhaustive inventory of every tool used in the project, with the reason each was chosen.
+
+### Language & Runtime
+
+| Tool | Version | Role | Why |
+|------|---------|------|-----|
+| **Python** | 3.11 (min 3.10) | Project language | 3.10 is the minimum required by `ultralytics`; 3.11 offers measurable performance improvements. |
+| **Conda** | any | Environment management | Provides an isolated, reproducible environment. Easier than `venv` for managing CUDA-dependent packages like PyTorch. |
+
+---
+
+### ML & Training
+
+| Tool | Role | Why |
+|------|------|-----|
+| **Ultralytics YOLOv8** (`ultralytics`) | Object detection model and training API | Industry-standard real-time single-stage detector. Fully Python-native and pip-installable — no Darknet/C++ toolchain. YOLOv8s (`yolov8s.pt`) chosen as the base: a good balance of accuracy and speed for a 2-class fine-tune on a modest dataset. |
+| **PyTorch** (`torch`, `torchvision`) | Deep learning backend | Required by `ultralytics`. Installed separately before `ultralytics` to guarantee CUDA support is not silently overridden by a CPU-only wheel. |
+| **CUDA** (via PyTorch CUDA wheel) | GPU acceleration | Reduces each training stage from hours (CPU) to minutes. Used via `device=0` in YOLOv8 training calls. |
+| **Albumentations** (`albumentations`) | Offline data augmentation | Bbox-aware augmentation: applies geometric and photometric transforms to both image and bounding box coordinates simultaneously. Generates ~9 augmented copies per training image (8–10× expansion), which is critical given the ~255 source photos. Chosen over `imgaug` for its speed and actively maintained API. |
+| **scikit-learn** (`sklearn.model_selection.train_test_split`) | Stratified train/val/test splitting | Single function call handles stratified 80/10/10 splitting by image category (single-cat, both-cats, no-cat), ensuring each split has a representative class mix. |
+| **PyYAML** (`yaml`) | Dataset configuration | Generates `data/data.yaml` — the configuration file YOLOv8 requires to locate images and class names. |
+
+---
+
+### Image Processing
+
+| Tool | Role | Why |
+|------|------|-----|
+| **OpenCV** (`opencv-python` / `cv2`) | Image I/O, resizing, bbox drawing, colour operations | Core image manipulation throughout `src/utils.py`, `src/preprocess.py`, `src/infer.py`, and `app/gui.py`. Handles BGR array operations, rectangle and text drawing for bounding box overlays, and colour space conversion (RGB↔BGR). |
+| **Pillow** (`Pillow` / `PIL`) | Image loading with EXIF correction | `PIL.ImageOps.exif_transpose` is used everywhere images are loaded (annotation notebook, preprocessing, GUI) to silently correct the orientation of WhatsApp-origin portrait photos before any processing occurs. OpenCV does not handle EXIF rotation. |
+| **NumPy** (`numpy`) | Array operations | Underpins all image data manipulation as ndarray. Used directly in `src/utils.py`, `src/annotate.py`, and `app/gui.py`. |
+
+---
+
+### Annotation UI
+
+| Tool | Role | Why |
+|------|------|-----|
+| **Jupyter Notebook** (`notebook`) | Annotation runtime | Browser-based Jupyter is required for the `%matplotlib widget` interactive backend. VS Code's notebook editor is explicitly incompatible with `ipympl` (see design decision #20). |
+| **ipympl** | Interactive matplotlib backend | Enables click-and-drag interaction on a matplotlib canvas inside Jupyter. The `%matplotlib widget` magic activates it. Essential for the bounding box drawing workflow. |
+| **matplotlib** (`matplotlib`) | Annotation canvas and results visualisation | Displays images one at a time for annotation; renders bounding boxes (saved as dashed, pending as solid). Also used in `notebooks/02_training_results.ipynb` for loss/mAP curves and sample prediction grids. |
+| **ipywidgets** (`ipywidgets`) | Annotation controls | Provides the dropdown (cat selector), buttons (Confirm, Delete Last, Mark Empty, Skip, Previous, Next), and status label that make up the annotation UI around the matplotlib canvas. |
+
+---
+
+### Inference App
+
+| Tool | Role | Why |
+|------|------|-----|
+| **Gradio** (`gradio`) | Browser-based inference GUI | Industry standard for local ML demo apps (used widely on Hugging Face). `pip install gradio` is the only setup needed — it serves a full browser UI with file upload, image display, sliders, and buttons. Chosen over Streamlit for its simpler image-in/image-out interaction model. |
+
+---
+
+### CLI & Progress
+
+| Tool | Role | Why |
+|------|------|-----|
+| **argparse** (stdlib) | CLI entry point | Standard library — no extra dependency. Every subcommand gets a `--help` description automatically. Used in `app/gui.py` for `--weights` and `--port` flags; will be the backbone of `cli.py` (Phase 6). |
+| **tqdm** (`tqdm`) | Progress bars | Wraps iterators in preprocessing loops to show per-image progress during the augmentation and split steps. Zero-config and compatible with both notebook and terminal contexts. |
+| **logging** (stdlib) | Structured logging | Used throughout `src/` instead of bare `print()`. A shared `setup_logging()` helper in `src/utils.py` configures a consistent `[LEVEL] timestamp — message` format. Four levels used consistently: `DEBUG` (per-step detail), `INFO` (milestones), `WARNING` (recoverable issues), `ERROR` (failures). |
+
+---
+
+### Code Quality
+
+| Tool | Role | Why |
+|------|------|-----|
+| **black** | Code formatter | Opinionated, zero-config formatter. Eliminates style debates. Line length: 88 (black default). Configured in `pyproject.toml`. |
+| **ruff** | Linter + import sorter | Replaces `flake8` + `isort` in a single fast tool. Rules enabled: `E` (pycodestyle errors), `F` (pyflakes unused imports/variables), `I` (isort import ordering). Configured in `pyproject.toml`. |
+| **pytest** | Unit testing | Industry-standard Python test framework. All tests in `tests/` use synthetic images and fixtures — no dependency on the real photo dataset. Test paths configured in `pyproject.toml` so `pytest` with no arguments runs the full suite. |
+
+---
+
+### Configuration
+
+| File | Format | Role |
+|------|--------|------|
+| `pyproject.toml` | TOML | Centralises tool configuration for `black`, `ruff`, and `pytest` in one file. No separate `.flake8`, `setup.cfg`, or `pytest.ini` needed. |
+| `data/data.yaml` | YAML | YOLOv8 dataset manifest: paths to train/val/test image directories, number of classes (`nc: 2`), and class names (`['aioli', 'mayo']`). Generated by `src/preprocess.py` and committed to git (it is configuration, not data). |
+| `requirements.txt` | pip format | Runtime dependencies. Intentionally excludes dev tools. |
+| `requirements-dev.txt` | pip format | Dev-only tools (`black`, `ruff`, `pytest`). Kept separate so a user who only wants to run inference does not need to install the full toolchain. |
+
+---
+
+### Version Control & Hosting
+
+| Tool | Role | Why |
+|------|------|-----|
+| **git** | Version control | Standard. `.gitignore` excludes all large binary/generated artefacts (`data/raw/`, `data/images/`, `data/labels/`, `runs/`, `*.pt`, `outputs/`, `.ipynb_checkpoints/`) — only source code and configuration are tracked. |
+| **GitHub** | Remote hosting | Hosts the repository at `github.com/D3m0st3n/CatDetection`. |
+| **Conventional Commits** | Commit message convention | Structured prefix (`feat:`, `fix:`, `docs:`, `chore:`, etc.) makes the git log machine-readable and clarifies intent at a glance. |
