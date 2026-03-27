@@ -8,12 +8,13 @@ A fully local ML pipeline to detect and identify two cats — **Aïoli** and **M
 
 | File | Purpose |
 |------|---------|
+| `README.md` | Project overview, demo, model performance, and AI-agent development methodology |
 | `TUTORIAL.md` | Step-by-step guide for new users — environment setup through inference |
 | `ROADMAP.md` | Goals, state-of-the-art context, and phase-by-phase milestones |
-| `DESIGN.md` | UX, visual style, naming, and interface behaviour |
+| `DESIGN.md` | UX, visual style, naming, interface behaviour, and exhaustive technical specifications |
 | `CONTRIBUTING.md` | Architecture, code standards, data formats, and git conventions |
 | `plan.md` | Original planning document — retained for historical reference |
-| `design_decisions.md` | Log of every decision made during planning and why |
+| `design_decisions.md` | Log of every decision made during planning and why (decisions 1–38) |
 
 ## Project Structure at a Glance
 
@@ -23,7 +24,9 @@ notebooks/          Jupyter workflows: annotation and training results
 src/                Core Python library (imported by notebooks, app, and CLI)
 app/                Gradio inference GUI
 tests/              pytest unit tests for src/
+assets/             Static assets committed to the repo (e.g. demo detection image for README)
 runs/               YOLOv8 training outputs — weights, metrics, plots (gitignored)
+outputs/            Annotated images saved by the Gradio GUI (gitignored)
 cli.py              Unified CLI entry point (planned)
 pyproject.toml      Tool config: black, ruff, pytest
 requirements.txt    Runtime dependencies
