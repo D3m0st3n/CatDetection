@@ -28,6 +28,9 @@ __pycache__/
 .vscode/
 .idea/
 
+# Local launchers (personal convenience scripts, not part of the repo)
+*.bat
+
 # OS
 .DS_Store
 Thumbs.db
