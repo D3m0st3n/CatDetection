@@ -287,6 +287,30 @@ This is an example of **iterative requirement elicitation with an agent** — a 
 
 ---
 
+### Managing Claude's resource usage
+
+Claude operates under a usage limit that resets on a rolling window. On agentic tasks — where Claude reads files, browses, runs code, and writes output across many steps — this limit can be reached in under an hour if requests are not scoped carefully. This happened repeatedly during this project and is worth planning around.
+
+**The core principle: fewer, denser requests beat many small ones.**
+
+Every message you send starts a new agent turn. Each turn has overhead regardless of how small the task is. A single well-scoped request that asks Claude to do five related things in one go uses far fewer resources than five separate messages asking for one thing each.
+
+**Practical rules learned from this project:**
+
+- **Batch related tasks explicitly.** "Update design_decisions.md, add a Technical Specs section to DESIGN.md, and update AGENTS.md to reflect both" is one turn. Asking for each separately is three turns with duplicate file-reading overhead in each.
+
+- **Front-load context, don't let Claude re-discover it.** If you already know which files are relevant, name them in your request. This prevents Claude from spending a turn exploring the directory structure before doing anything useful.
+
+- **Save clarifying questions for before the work, not during.** A single upfront question ("should this be public or private?") is cheap. The same question asked mid-task interrupts the flow and costs a full turn just to resume.
+
+- **Prefer large scoped sessions over frequent small ones.** Plan what you want to accomplish in a session before starting it. A 20-minute focused session that completes a full phase is more resource-efficient than six short check-ins that each re-read the same documentation.
+
+- **Documentation and code changes together.** Updating `AGENTS.md`, `ROADMAP.md`, and committing — when done as a follow-on to the code work — costs almost nothing extra because Claude already has the context loaded. Doing it in a separate session means re-reading the codebase from scratch.
+
+- **Avoid asking Claude to verify things it just did.** "Did that work?" after a file write is a wasted turn. Trust the output, or ask Claude to verify as part of the original request ("write it and confirm the line count").
+
+---
+
 ## How to Use This in a Future Chat
 
 Paste this file plus the relevant active document(s) at the start of the conversation:
