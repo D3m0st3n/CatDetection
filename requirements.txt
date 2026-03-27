@@ -1,0 +1,14 @@
+# PyTorch with CUDA must be installed first — see CONTRIBUTING.md for instructions.
+# pip install torch torchvision --index-url https://download.pytorch.org/whl/cu128
+ultralytics
+opencv-python
+Pillow
+albumentations
+matplotlib
+ipywidgets
+ipympl
+notebook
+scikit-learn
+PyYAML
+gradio
+tqdm

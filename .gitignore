@@ -1,0 +1,36 @@
+# Training outputs
+runs/
+
+# Dataset artefacts (large binaries, not source code)
+data/raw/
+data/images/
+data/labels/
+
+# GUI inference outputs (annotated images saved by app/gui.py)
+outputs/
+
+# Model weights
+*.pt
+
+# Python
+__pycache__/
+*.egg-info/
+*.pyc
+
+# Jupyter
+.ipynb_checkpoints/
+
+# Virtual environments
+.venv/
+.conda/
+
+# IDE
+.vscode/
+.idea/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Claude Code
+.claude/
